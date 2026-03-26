@@ -20,7 +20,7 @@ jobs:
 
     - name: Install frontend dependencies
       run: |
-        cd frontend/frontend
+        cd frontend
         npm install
 
     - name: Install backend dependencies
@@ -32,4 +32,4 @@ jobs:
       run: docker build -t backend-app ./backend
 
     - name: Build frontend Docker image
-      run: docker build -t frontend-app ./frontend/frontend
+      run: docker build -t frontend-app ./frontend
