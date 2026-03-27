@@ -4,7 +4,7 @@ function App() {
   const [data, setData] = useState("Loading...");
 
   useEffect(() => {
-    fetch("http://13.127.115.98:5000/api/data")
+    fetch("http://backend:5000/api/data")
       .then(res => res.json())
       .then(data => setData(data.message))
       .catch(err => {
