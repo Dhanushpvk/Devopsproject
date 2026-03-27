@@ -6,53 +6,75 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+    # 🔹 1. Checkout code
     - name: Checkout code
       uses: actions/checkout@v3
 
+    # 🔹 2. Set up Node
     - name: Set up Node
       uses: actions/setup-node@v3
       with:
         node-version: '18'
 
+    # 🔹 3. Install frontend dependencies
     - name: Install frontend dependencies
       run: |
         cd frontend
         npm install
 
+    # 🔹 4. Install backend dependencies
     - name: Install backend dependencies
       run: |
         cd backend
         npm install
 
-    - name: Build backend Docker image
-      run: docker build -t backend-app ./backend
+    # 🔹 5. Configure AWS credentials
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-south-1
 
-    - name: Build frontend Docker image
-      run: docker build -t frontend-app ./frontend
-deploy:
-  needs: build
-  runs-on: ubuntu-latest
+    # 🔹 6. Login to ECR
+    - name: Login to ECR
+      run: |
+        aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 231284356477.dkr.ecr.ap-south-1.amazonaws.com
 
-  steps:
-  - name: Deploy to EC2
-    uses: appleboy/ssh-action@v0.1.6
-    with:
-      host: ${{ secrets.EC2_HOST }}
-      username: ${{ secrets.EC2_USER }}
-      key: ${{ secrets.EC2_KEY }}
-      script: |
-        docker pull 231284356477.dkr.ecr.ap-south-1.amazonaws.com/backend-repo:latest
-        docker pull 231284356477.dkr.ecr.ap-south-1.amazonaws.com/frontend-repo:latest
+    # 🔹 7. Build and push backend image
+    - name: Build and push backend image
+      run: |
+        docker build -t backend-app ./backend
+        docker tag backend-app:latest 231284356477.dkr.ecr.ap-south-1.amazonaws.com/backend-repo:latest
+        docker push 231284356477.dkr.ecr.ap-south-1.amazonaws.com/backend-repo:latest
 
-        docker stop backend-container || true
-        docker stop frontend-container || true
+    # 🔹 8. Build and push frontend image
+    - name: Build and push frontend image
+      run: |
+        docker build -t frontend-app ./frontend
+        docker tag frontend-app:latest 231284356477.dkr.ecr.ap-south-1.amazonaws.com/frontend-repo:latest
+        docker push 231284356477.dkr.ecr.ap-south-1.amazonaws.com/frontend-repo:latest
 
-        docker rm backend-container || true
-        docker rm frontend-container || true
+    # 🔹 9. Deploy to EC2
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        script: |
+          docker pull 231284356477.dkr.ecr.ap-south-1.amazonaws.com/backend-repo:latest
+          docker pull 231284356477.dkr.ecr.ap-south-1.amazonaws.com/frontend-repo:latest
 
-        docker run -d -p 5000:5000 --name backend-container 231284356477.dkr.ecr.ap-south-1.amazonaws.com/backend-repo:latest
-        docker run -d -p 3000:3000 --name frontend-container 231284356477.dkr.ecr.ap-south-1.amazonaws.com/frontend-repo:latest
+          docker stop backend-container || true
+          docker stop frontend-container || true
+
+          docker rm backend-container || true
+          docker rm frontend-container || true
+
+          docker run -d -p 5000:5000 --name backend-container 231284356477.dkr.ecr.ap-south-1.amazonaws.com/backend-repo:latest
+          docker run -d -p 3000:3000 --name frontend-container 231284356477.dkr.ecr.ap-south-1.amazonaws.com/frontend-repo:latest
