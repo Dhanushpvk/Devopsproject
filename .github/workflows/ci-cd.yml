@@ -49,15 +49,15 @@ jobs:
     - name: Build and push backend image
       run: |
         docker build -t backend-app ./backend
-        docker tag backend-app:latest 231284356477.dkr.ecr.ap-south-1.amazonaws.com/backend-repo:latest
-        docker push 231284356477.dkr.ecr.ap-south-1.amazonaws.com/backend-repo:latest
+        docker tag backend-app 231284356477.dkr.ecr.ap-south-1.amazonaws.com/devops/backend-repo:latest
+        docker push 231284356477.dkr.ecr.ap-south-1.amazonaws.com/devops/backend-repo:latest
 
     # 🔹 8. Build and push frontend image
     - name: Build and push frontend image
       run: |
         docker build -t frontend-app ./frontend
-        docker tag frontend-app:latest 231284356477.dkr.ecr.ap-south-1.amazonaws.com/frontend-repo:latest
-        docker push 231284356477.dkr.ecr.ap-south-1.amazonaws.com/frontend-repo:latest
+        docker tag frontend-app 231284356477.dkr.ecr.ap-south-1.amazonaws.com/devops/frontend-repo:latest
+        docker push 231284356477.dkr.ecr.ap-south-1.amazonaws.com/devops/frontend-repo:latest
 
     # 🔹 9. Deploy to EC2
     - name: Deploy to EC2
